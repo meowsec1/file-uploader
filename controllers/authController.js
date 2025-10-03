@@ -21,7 +21,7 @@ const validateSignUp = [
 
 
 async function getSignUp() {
-    res.send("Sign Up Page Here");
+    return res.send("Sign Up Page Here");
 }
 
 const postSignUp = [
@@ -34,15 +34,14 @@ const postSignUp = [
         const { username, password } = req.body;
         const existingUser = await db.findUser(username);
         if (existingUser) {
-            res.send("Username taken");
+            return res.send("Username taken");
         }
 
         const user = await db.createUser(username, password);
-        res.send(`User created: ${user}`);
+        return res.send(`User created: ${user}`);
 
     }
 ]
-
 
 
 function getLogin(req, res) {
@@ -58,22 +57,43 @@ async function postLogin (req, res) {
         if (match) {
 
             // send JWT token
-            const token = jwt.sign({ foo: 'bar' }, process.env.SECRET);
-            res.send(`Successful login! Token: ${token}`);
+            const token = jwt.sign({
+                data: existingUser.id
+            }, process.env.SECRET, { expiresIn: 60 * 60}); // expires in 1 hour
+
+            return res.send(`Successful login! Token: ${token}`);
         }
         else {
-            res.send("Password Incorrect!");
+            return res.send("Password Incorrect!");
         }
     }
     else {
-        res.send("User does not exist!");
+        return res.send("User does not exist!");
     }
 }
 
+async function isAuthenticated(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const jwtToken = authHeader && authHeader.split(' ')[1];
+    if (!jwtToken) return res.status(401).send("Unauthorized!");
+    jwt.verify(jwtToken, process.env.SECRET, function(error, decoded) {
+        if (error) {
+            return res.status(401).send("Unauthorized!");
+        }
+        req.user = decoded
+        next();
+    });
+}
+
+function getProtected(req, res) {
+    res.send("Welcome to the protected route!")
+}
 
 module.exports = {
     getSignUp,
     postSignUp,
     getLogin,
     postLogin,
+    isAuthenticated,
+    getProtected,
 }

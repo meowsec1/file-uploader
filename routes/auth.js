@@ -10,6 +10,6 @@ authRouter.post('/signup', authController.postSignUp);
 authRouter.get('/login', authController.getLogin);
 authRouter.post('/login', authController.postLogin);
 
-
+authRouter.get('/protected', authController.isAuthenticated, authController.getProtected);
 
 module.exports = authRouter;
