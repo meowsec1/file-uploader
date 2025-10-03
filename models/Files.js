@@ -1,43 +1,59 @@
-const prisma = require('../prismaClient.js');
+const prisma = require('../config/prismaClient.js');
 
-async function getFiles(folderId) {
+async function getFiles(userId, folderId) {
     return await prisma.file.findMany({
         where: {
-            folderId
+            folderId,
+            folder: { userId }
         }
     });
 }
 
-async function createFile(name, url, folderId) {
+async function getFile(userId, fileId) {
+    return await prisma.file.findFirst({
+        where: {
+            id: fileId, 
+            folder: { userId }
+        }
+    })
+}
+
+async function createFile(folderId, name, key) {
     return await prisma.file.create({
         data: {
+            folderId,
             name,
-            url,
-            folderId
+            key,
         }
     });
 }
 
-// Update a file (e.g. rename or change URL) do i even need this?
-async function updateFile(fileId, data) {
-    return await prisma.file.update({
+// is this required?
+async function updateFile(userId, fileId, data) {
+    const updated = await prisma.file.updateMany({
         where: {
-            id: fileId
+            id: fileId,
+            folder: { userId } // ✅ Only updates if folder belongs to user
         },
         data
     });
+    return updated.count; // 0 if nothing updated
 }
 
-async function deleteFile(fileId) {
-    return await prisma.file.delete({
+
+async function deleteFile(userId, fileId) {
+    const deleted = await prisma.file.deleteMany({
         where: {
-            id: fileId
+            id: fileId,
+            folder: { userId }
         }
     });
+    return deleted;
 }
 
 module.exports = {
     getFiles,
+    getFile,
     createFile,
     updateFile,
     deleteFile,

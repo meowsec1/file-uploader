@@ -59,7 +59,7 @@ async function postLogin (req, res) {
             // send JWT token
             const token = jwt.sign({
                 sub: existingUser.id
-            }, process.env.SECRET, { expiresIn: 60 * 60}); // expires in 1 hour
+            }, process.env.SECRET, { expiresIn: '7d'}); // expires in 1 hour
 
             return res.send(`Successful login! Token: ${token}`);
         }
