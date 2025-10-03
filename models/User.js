@@ -21,7 +21,15 @@ async function findUser(username) {
     return user;
 }
 
+async function findUserById(id) {
+    return prisma.user.findUnique({
+        where: { id },
+        // include: { profile: true, roles: true } // automatically get related data
+    });
+}
+
 module.exports = {
     createUser,
-    findUser
+    findUser,
+    findUserById,
 }

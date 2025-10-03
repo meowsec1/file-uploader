@@ -58,7 +58,7 @@ async function postLogin (req, res) {
 
             // send JWT token
             const token = jwt.sign({
-                data: existingUser.id
+                sub: existingUser.id
             }, process.env.SECRET, { expiresIn: 60 * 60}); // expires in 1 hour
 
             return res.send(`Successful login! Token: ${token}`);
@@ -72,18 +72,18 @@ async function postLogin (req, res) {
     }
 }
 
-async function isAuthenticated(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const jwtToken = authHeader && authHeader.split(' ')[1];
-    if (!jwtToken) return res.status(401).send("Unauthorized!");
-    jwt.verify(jwtToken, process.env.SECRET, function(error, decoded) {
-        if (error) {
-            return res.status(401).send("Unauthorized!");
-        }
-        req.user = decoded
-        next();
-    });
-}
+// async function isAuthenticated(req, res, next) {
+//     const authHeader = req.headers['authorization'];
+//     const jwtToken = authHeader && authHeader.split(' ')[1];
+//     if (!jwtToken) return res.status(401).send("Unauthorized!");
+//     jwt.verify(jwtToken, process.env.SECRET, function(error, decoded) {
+//         if (error) {
+//             return res.status(401).send("Unauthorized!");
+//         }
+//         req.user = decoded
+//         next();
+//     });
+// }
 
 function getProtected(req, res) {
     res.send("Welcome to the protected route!")
@@ -94,6 +94,6 @@ module.exports = {
     postSignUp,
     getLogin,
     postLogin,
-    isAuthenticated,
+    // isAuthenticated,
     getProtected,
 }
