@@ -21,11 +21,10 @@ model User {
 model Folder {
   id          Int            @id @default(autoincrement())
   name        String
-  published   Boolean        @default(false)
   files       File[]
-  user        User           @relation(fields: [userId], references: [id])
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
-  sharedLinks SharedLink[]
+  sharedLinks SharedLink[]  
 }
 
 model File {
@@ -33,7 +32,7 @@ model File {
   name        String
   url         String
   createdAt   DateTime  @default(now())
-  folder      Folder    @relation(fields: [folderId], references: [id])
+  folder      Folder    @relation(fields: [folderId], references: [id], onDelete: Cascade)
   folderId    Int
 }
 
@@ -42,8 +41,8 @@ model SharedLink {
   url       String    @unique
   createdAt DateTime  @default(now())
   expiresAt DateTime
-  folder    Folder    @relation(fields: [folderId], references: [id])
+  folder    Folder    @relation(fields: [folderId], references: [id], onDelete: Cascade)
   folderId  Int
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int 
 }

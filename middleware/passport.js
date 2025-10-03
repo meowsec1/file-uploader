@@ -27,4 +27,21 @@ passport.use(new JwtStrategy(opts, async function(jwt_payload, done) {
 }));
 
 
+// custom implementation
+
+// async function isAuthenticated(req, res, next) {
+//     const authHeader = req.headers['authorization'];
+//     const jwtToken = authHeader && authHeader.split(' ')[1];
+//     if (!jwtToken) return res.status(401).send("Unauthorized!");
+//     jwt.verify(jwtToken, process.env.SECRET, function(error, decoded) {
+//         if (error) {
+//             return res.status(401).send("Unauthorized!");
+//         }
+//         req.user = decoded
+//         next();
+//     });
+// }
+
 module.exports = passport;
+
+

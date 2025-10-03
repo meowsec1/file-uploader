@@ -72,19 +72,6 @@ async function postLogin (req, res) {
     }
 }
 
-// async function isAuthenticated(req, res, next) {
-//     const authHeader = req.headers['authorization'];
-//     const jwtToken = authHeader && authHeader.split(' ')[1];
-//     if (!jwtToken) return res.status(401).send("Unauthorized!");
-//     jwt.verify(jwtToken, process.env.SECRET, function(error, decoded) {
-//         if (error) {
-//             return res.status(401).send("Unauthorized!");
-//         }
-//         req.user = decoded
-//         next();
-//     });
-// }
-
 function getProtected(req, res) {
     res.send("Welcome to the protected route!")
 }
@@ -94,6 +81,5 @@ module.exports = {
     postSignUp,
     getLogin,
     postLogin,
-    // isAuthenticated,
     getProtected,
 }
