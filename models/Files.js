@@ -42,13 +42,20 @@ async function updateFile(userId, fileId, data) {
 
 
 async function deleteFile(userId, fileId) {
-    const deleted = await prisma.file.deleteMany({
+    // First verify ownership
+    const file = await prisma.file.findFirst({
         where: {
             id: fileId,
             folder: { userId }
         }
     });
-    return deleted;
+    
+    if (!file) return null;
+    
+    // Then delete
+    return await prisma.file.delete({
+        where: { id: fileId }
+    });
 }
 
 module.exports = {

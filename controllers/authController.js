@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 
 const db = require('../models/User.js');
 
-
 const validateSignUp = [
     body('username')
         .trim()
@@ -19,35 +18,37 @@ const validateSignUp = [
         .custom((value, { req }) => value === req.body.password).withMessage("Password confirmation must match password")
 ]
 
-
-async function getSignUp() {
-    return res.send("Sign Up Page Here");
-}
-
 const postSignUp = [
     validateSignUp,
     async function (req, res) {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() })
+        return res.status(400).json({
+            success: false,
+            message: "Validation failed",
+            errors: errors.array()
+        });
         }
         const { username, password } = req.body;
         const existingUser = await db.findUser(username);
         if (existingUser) {
-            return res.send("Username taken");
+            return res.status(404).json({
+                success: false,
+                message: "Username taken",
+            });
         }
 
         const user = await db.createUser(username, password);
-        return res.send(`User created: ${user}`);
-
+        return res.json({
+            success: true,
+            message: `User created: ${user}`
+        });
     }
 ]
 
-
-function getLogin(req, res) {
-    res.send("Login Page Here");
+async function getLogin(req, res) {
+    res.json({message: "Success"})
 }
-
 
 async function postLogin (req, res) {
     const { username, password } = req.body;
@@ -61,25 +62,42 @@ async function postLogin (req, res) {
                 sub: existingUser.id
             }, process.env.SECRET, { expiresIn: '7d'}); // expires in 1 hour
 
-            return res.send(`Successful login! Token: ${token}`);
+            res.cookie('token', token, {
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+                httpOnly: true,       // JS cannot read it
+                secure: false,        // must be false for localhost/HTTP
+                sameSite: 'Lax'       // allows sending cookie in requests from React dev server
+            });
+
+            return res.json({
+                success: true,
+                message: `Login success. Token: ${token}`,
+                auth: { token }
+            });
         }
         else {
-            return res.send("Password Incorrect!");
+            return res.json({
+                success: false,
+                message: "Password incorrect"
+            });
         }
     }
     else {
-        return res.send("User does not exist!");
+        return res.json({
+            success: false,
+            message: "User does not exist"
+        });
     }
 }
 
-function getProtected(req, res) {
-    res.send("Welcome to the protected route!")
+async function getSignUp(req, res) {
+    res.json({message: "Success"})
 }
+
 
 module.exports = {
     getSignUp,
     postSignUp,
     getLogin,
     postLogin,
-    getProtected,
 }

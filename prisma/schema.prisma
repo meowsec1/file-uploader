@@ -38,7 +38,7 @@ model File {
 
 model SharedLink {
   id        Int       @id @default(autoincrement())
-  url       String    @unique
+  hash       String   @unique
   createdAt DateTime  @default(now())
   expiresAt DateTime
   folder    Folder    @relation(fields: [folderId], references: [id], onDelete: Cascade)

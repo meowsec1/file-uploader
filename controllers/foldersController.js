@@ -1,4 +1,8 @@
 const db = require('../models/Folders.js');
+const sharedLinkDb = require('../models/SharedLink.js');
+const crypto = require('crypto');
+const s3Utils = require('../utils/s3Utils.js');
+
 const { body, validationResult } = require('express-validator');
 
 const validateFolder = [
@@ -14,19 +18,39 @@ const createFolder = [
     async function (req, res) {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() })
+            return res.status(400).json({
+                success: false,
+                message: "Validation failed",
+                errors: errors.array()
+            })
         }
         const { name } = req.body;
         const userId = req.user.id;
         const folder = await db.createFolder(userId, name);
-        res.send(folder);
+        res.json({
+            success: true,
+            data: folder,
+        });
     }
 ]
+
+async function getFolder(req, res) {
+    const userId = req.user.id;
+    const folderId = Number(req.params.folderId);
+    const folder = await db.getFolder(userId, folderId);
+    res.json({
+        success: true,
+        data: folder
+    })
+}
 
 async function getFolders(req, res) {
     const userId = req.user.id;
     const folders = await db.getFolders(userId);
-    res.send(folders);
+    res.json({
+        success: true,
+        data: folders
+    });
 }
 
 const updateFolder = [
@@ -40,7 +64,10 @@ const updateFolder = [
         const folderId = Number(req.params.folderId);
         const { name } = req.body
         const updatedFolder = await db.updateFolder(userId, folderId, name);
-        res.send(updatedFolder);
+        res.json({
+            success: true,
+            data: updatedFolder
+        });
     }
 ]
 
@@ -48,12 +75,64 @@ async function deleteFolder(req, res) {
     const userId = req.user.id;
     const folderId = Number(req.params.folderId);
     const deletedFolder = await db.deleteFolder(userId, folderId);
-    res.send(deletedFolder);
+    res.json({
+        success: true,
+        data: { id: deletedFolder.id }
+    });
+}
+
+
+
+async function createShareLink(req, res) {
+    const userId = req.user.id;
+    const folderId = Number(req.params.folderId);
+    
+    // create a hash
+    const hash = crypto.randomUUID();
+
+    const expiresAt = new Date(new Date().setDate(new Date().getDate() + 1)); // tomorrow
+
+    const sharedLink = await sharedLinkDb.createSharedLink(userId, folderId, hash, expiresAt);
+    console.log(sharedLink);
+
+    res.json({
+        success: true,
+        data: sharedLink,
+    })
+
+}
+
+async function getSharedFolder(req, res) {
+    const hash = req.params.hash
+
+    const data = await sharedLinkDb.getSharedFolderData(hash);
+    console.log(data)
+    console.log(data.files)
+    
+
+    const filesWithUrls = await Promise.all(
+        data.files.map(async (file) => {
+          const url = await s3Utils.getPresignedUrl(file.key);
+          return {
+            id: file.id,
+            name: file.name,
+            url,
+          };
+        })
+      );
+
+    res.json({
+        success: true,
+        data: { ...data, files: filesWithUrls }
+    })
 }
 
 module.exports = {
     createFolder,
     getFolders,
+    getFolder,
     updateFolder,
     deleteFolder,
+    createShareLink,
+    getSharedFolder,
 }

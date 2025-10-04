@@ -1,17 +1,29 @@
 const db = require('../models/Files.js');
 const folderDb = require('../models/Folders.js');
+
 const s3Utils = require('../utils/s3Utils.js');
 
 async function getFiles(req, res) {
-    const userId = req.user.id;
-    const folderId = Number(req.params.folderId);
+  const userId = req.user.id;
+  const folderId = Number(req.params.folderId);
 
-    const files = await db.getFiles(userId, folderId);
-    const urls = await Promise.all(files.map(async (file) => {
-        return await s3Utils.getPresignedUrl(file.key);
-    }))
+  const files = await db.getFiles(userId, folderId);
 
-    res.send(urls);
+  const filesWithUrls = await Promise.all(
+    files.map(async (file) => {
+      const url = await s3Utils.getPresignedUrl(file.key);
+      return {
+        id: file.id,
+        name: file.name,
+        url,
+      };
+    })
+  );
+
+  res.json({
+    success: true,
+    data: filesWithUrls,
+  });
 }
 
 async function createFile(req, res) {
@@ -24,13 +36,17 @@ async function createFile(req, res) {
     // upload to s3
     s3Utils.uploadFile(req.file, key);
 
-    const folder = await folderDb.getFolder(folderId)
+    const folder = await folderDb.getFolder(userId, folderId)
     if (!folder || folder.userId !== userId) {
         return res.status(403).json({ error: "You do not own this folder" });
     }
 
     const file = await db.createFile(folderId, name, key);
-    res.json(file);
+    const url = await s3Utils.getPresignedUrl(file.key);
+    res.json({
+        success: true,
+        data: {...file, url},
+    });
 }
 
 async function deleteFile(req, res) {
@@ -45,11 +61,17 @@ async function deleteFile(req, res) {
 
     const deleted = await db.deleteFile(userId, fileId);
     if (!deleted) {
-        return res.status(404).json({ error: "File not found or unauthorized" });
+        return res.status(404).json({ success: false, error: "File not found or unauthorized" });
     }
 
-    res.json({ message: "File deleted" });
+    res.json({
+        success: true,
+        data: { id: deleted.id },
+        message: "File deleted"
+    });
 }
+
+
 
 module.exports = {
     getFiles,

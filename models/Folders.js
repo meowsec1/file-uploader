@@ -1,61 +1,59 @@
 const prisma = require('../config/prismaClient.js');
 
-
-async function getFolder(folderId) {
-    const folder = await prisma.folder.findUnique({
-        where: {
-            id: folderId
-        }
-    })
-    return folder;
+async function getFolders(userId) {
+  return await prisma.folder.findMany({
+    where: { userId },
+  });
 }
 
-async function getFolders(userId) {
-    const folders = await prisma.folder.findMany({
-        where: {
-            userId
-        }
-    })
-    return folders;
+async function getFolder(userId, folderId) {
+  return await prisma.folder.findFirst({
+    where: {
+      id: folderId,
+      userId,
+    },
+  });
 }
 
 async function createFolder(userId, name) {
-    const folder = await prisma.folder.create({
-        data: {
-            name,
-            userId,
-        }
-    })
-    return folder;
+  return await prisma.folder.create({
+    data: {
+      name,
+      userId,
+    },
+  });
 }
 
 async function updateFolder(userId, folderId, name) {
-    const updatedFolder = await prisma.folder.update({
-        where: {
-            id: folderId,
-            userId
-        },
-        data: {
-            name
-        }
-    })
-    return updatedFolder;
+  const updated = await prisma.folder.updateMany({
+    where: {
+      id: folderId,
+      userId,
+    },
+    data: { name },
+  });
+  return updated.count;
 }
 
 async function deleteFolder(userId, folderId) {
-    const deletedFolder = await prisma.folder.delete({
-        where: {
-            id: folderId,
-            userId
-        }
-    })
-    return deletedFolder;
+  const folder = await prisma.folder.findFirst({
+    where: {
+      id: folderId,
+      userId
+    }
+  });
+  
+  if (!folder) return null;
+  
+  return await prisma.folder.delete({
+    where: { id: folderId }
+  });
 }
 
 module.exports = {
-    getFolder,
-    getFolders,
-    createFolder,
-    updateFolder,
-    deleteFolder,
-}
+  getFolders,
+  getFolder,
+  createFolder,
+  updateFolder,
+  deleteFolder,
+};
